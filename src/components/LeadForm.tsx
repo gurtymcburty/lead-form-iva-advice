@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { FormConfig, FormStep as FormStepType } from '@/config/forms';
 import { FormStep } from './FormStep';
-import { ThankYou } from './ThankYou';
 
 interface LeadFormProps {
   config: FormConfig;
@@ -14,7 +13,6 @@ export function LeadForm({ config }: LeadFormProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
   const [honeypot, setHoneypot] = useState('');
   const [startTime] = useState(Date.now());
 
@@ -66,7 +64,7 @@ export function LeadForm({ config }: LeadFormProps) {
     }
   }, [step.id, errors]);
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = useCallback(async (finalAnswers: Record<string, string>) => {
     setIsSubmitting(true);
 
     try {
@@ -75,7 +73,7 @@ export function LeadForm({ config }: LeadFormProps) {
 
       // Prepare submission data
       const formData = {
-        answers,
+        answers: finalAnswers,
         metadata: {
           timeOnForm,
           userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
@@ -86,19 +84,19 @@ export function LeadForm({ config }: LeadFormProps) {
       // Don't submit if honeypot is filled (bot detection)
       if (honeypot) {
         console.warn('Bot detected');
-        setIsComplete(true);
+        window.top?.location.replace('https://iva-advice.co/results/');
         return;
       }
 
       // Don't submit if form was completed too fast (< 5 seconds)
       if (timeOnForm < 5000) {
         console.warn('Form submitted too quickly');
-        setIsComplete(true);
+        window.top?.location.replace('https://iva-advice.co/results/');
         return;
       }
 
       // Check if user declined consent
-      if (answers.consent === 'decline') {
+      if (finalAnswers.consent === 'decline') {
         setErrors((prev) => ({
           ...prev,
           _form: 'You must accept the Privacy Policy and Terms to continue.',
@@ -120,7 +118,8 @@ export function LeadForm({ config }: LeadFormProps) {
         throw new Error(errorData.error || 'Submission failed');
       }
 
-      setIsComplete(true);
+      // Redirect to results page
+      window.top?.location.replace('https://iva-advice.co/results/');
     } catch (error) {
       console.error('Submission error:', error);
       setErrors((prev) => ({
@@ -130,7 +129,7 @@ export function LeadForm({ config }: LeadFormProps) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [answers, honeypot, startTime]);
+  }, [honeypot, startTime]);
 
   const handleNext = useCallback((overrideValue?: string) => {
     const valueToValidate = overrideValue ?? currentValue;
@@ -141,17 +140,22 @@ export function LeadForm({ config }: LeadFormProps) {
       return;
     }
 
-    // If override value provided, save it first
+    // Build the final answers including any override
+    const finalAnswers = overrideValue !== undefined
+      ? { ...answers, [step.id]: overrideValue }
+      : answers;
+
+    // Save the answer
     if (overrideValue !== undefined) {
-      setAnswers((prev) => ({ ...prev, [step.id]: overrideValue }));
+      setAnswers(finalAnswers);
     }
 
     if (currentStep < totalSteps - 1) {
       setCurrentStep((prev) => prev + 1);
     } else {
-      handleSubmit();
+      handleSubmit(finalAnswers);
     }
-  }, [currentStep, totalSteps, step, currentValue, validateStep, handleSubmit]);
+  }, [currentStep, totalSteps, step, currentValue, answers, validateStep, handleSubmit]);
 
   const handlePrev = useCallback(() => {
     if (currentStep > 0) {
@@ -170,10 +174,6 @@ export function LeadForm({ config }: LeadFormProps) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentStep, handlePrev]);
-
-  if (isComplete) {
-    return <ThankYou theme={config.theme} />;
-  }
 
   return (
     <>
