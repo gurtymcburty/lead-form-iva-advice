@@ -10,7 +10,7 @@ interface FormStepProps {
   value: string;
   answers: Record<string, string>;
   onChange: (value: string) => void;
-  onNext: () => void;
+  onNext: (overrideValue?: string) => void;
   onPrev: () => void;
   theme: FormTheme;
   error?: string;
@@ -48,13 +48,9 @@ export function FormStep({
     }
   };
 
-  // Handle option click - select and auto-advance
+  // Handle option click - select and auto-advance immediately
   const handleOptionClick = (optionValue: string) => {
-    onChange(optionValue);
-    // Auto-advance after a brief delay for visual feedback
-    setTimeout(() => {
-      onNext();
-    }, 150);
+    onNext(optionValue);
   };
 
   const progressPercent = ((stepIndex + 1) / totalSteps) * 100;
@@ -267,7 +263,7 @@ export function FormStep({
               <div className="mt-6 ml-6">
                 <button
                   type="button"
-                  onClick={onNext}
+                  onClick={() => onNext()}
                   disabled={!value || isSubmitting}
                   className="h-10 px-4 rounded-lg text-[14px] font-semibold transition-opacity"
                   style={{
@@ -309,7 +305,7 @@ export function FormStep({
         </button>
         <button
           type="button"
-          onClick={onNext}
+          onClick={() => onNext()}
           disabled={!value || isSubmitting}
           className="w-8 h-8 flex items-center justify-center transition-colors"
           style={{

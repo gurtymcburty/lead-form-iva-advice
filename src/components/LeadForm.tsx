@@ -132,12 +132,18 @@ export function LeadForm({ config }: LeadFormProps) {
     }
   }, [answers, honeypot, startTime]);
 
-  const handleNext = useCallback(() => {
-    const error = validateStep(step, currentValue);
+  const handleNext = useCallback((overrideValue?: string) => {
+    const valueToValidate = overrideValue ?? currentValue;
+    const error = validateStep(step, valueToValidate);
 
     if (error) {
       setErrors((prev) => ({ ...prev, [step.id]: error }));
       return;
+    }
+
+    // If override value provided, save it first
+    if (overrideValue !== undefined) {
+      setAnswers((prev) => ({ ...prev, [step.id]: overrideValue }));
     }
 
     if (currentStep < totalSteps - 1) {
