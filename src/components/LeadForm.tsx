@@ -27,19 +27,27 @@ export function LeadForm({ config }: LeadFormProps) {
       return 'This field is required';
     }
 
-    if (stepConfig.validation) {
-      const { pattern, minLength, maxLength, message } = stepConfig.validation;
-
-      if (minLength && value.length < minLength) {
-        return message || `Must be at least ${minLength} characters`;
+    // Email validation
+    if (stepConfig.fieldType === 'email') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        return 'Please enter a valid email address';
       }
+    }
 
-      if (maxLength && value.length > maxLength) {
-        return message || `Must be no more than ${maxLength} characters`;
+    // Phone validation (UK)
+    if (stepConfig.fieldType === 'tel') {
+      const phoneRegex = /^(\+44|0)[1-9][0-9]{8,10}$/;
+      const cleanPhone = value.replace(/\s/g, '');
+      if (!phoneRegex.test(cleanPhone)) {
+        return 'Please enter a valid UK phone number';
       }
+    }
 
-      if (pattern && !pattern.test(value)) {
-        return message || 'Invalid format';
+    // Name validation
+    if (stepConfig.id === 'first_name' || stepConfig.id === 'last_name') {
+      if (value.length < 2) {
+        return 'Please enter at least 2 characters';
       }
     }
 
@@ -86,6 +94,16 @@ export function LeadForm({ config }: LeadFormProps) {
       if (timeOnForm < 5000) {
         console.warn('Form submitted too quickly');
         setIsComplete(true);
+        return;
+      }
+
+      // Check if user declined consent
+      if (answers.consent === 'decline') {
+        setErrors((prev) => ({
+          ...prev,
+          _form: 'You must accept the Privacy Policy and Terms to continue.',
+        }));
+        setIsSubmitting(false);
         return;
       }
 
@@ -170,7 +188,7 @@ export function LeadForm({ config }: LeadFormProps) {
       {/* Form error message */}
       {errors._form && (
         <div
-          className="fixed top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-red-500 text-white text-sm z-50"
+          className="fixed top-20 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-red-500 text-white text-sm z-50"
         >
           {errors._form}
         </div>
@@ -181,6 +199,7 @@ export function LeadForm({ config }: LeadFormProps) {
         stepIndex={currentStep}
         totalSteps={totalSteps}
         value={currentValue}
+        answers={answers}
         onChange={handleChange}
         onNext={handleNext}
         onPrev={handlePrev}

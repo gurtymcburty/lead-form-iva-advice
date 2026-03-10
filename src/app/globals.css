@@ -1,3 +1,5 @@
+@import url('https://font.typeform.com/dist/google/inter/index.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -11,14 +13,78 @@
 html,
 body {
   height: 100%;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #FFFFFF;
+}
+
+/* Progress bar track */
+.progress-track {
+  background: rgba(61, 61, 61, 0.3);
+}
+
+/* Choice button transitions */
+.choice-button {
+  transition: box-shadow 0.15s ease-out, background-color 0.15s ease-out;
+}
+
+/* OK Button styling */
+.ok-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.ok-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: #0D9488;
+  border-radius: inherit;
+  z-index: -1;
+}
+
+/* Input underline animation */
+.typeform-input {
+  transition: box-shadow 0.2s ease-out;
+}
+
+.typeform-input:focus {
+  box-shadow: rgba(13, 148, 136, 0.6) 0px 2px 0px 0px;
+}
+
+/* Link styling in helper text */
+.helper-html a {
+  color: #646464;
+  text-decoration: underline;
+}
+
+.helper-html a:hover {
+  color: #0D9488;
+}
+
+/* Navigation button styling */
+.nav-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: #0D9488;
+  border-radius: inherit;
+  z-index: -1;
+}
+
+.nav-button:disabled::before {
+  background-color: transparent;
 }
 
 /* Smooth transitions for step changes */
-@keyframes fadeIn {
+@keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -26,22 +92,26 @@ body {
   }
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
+.animate-fadeInUp {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Image choice card */
+.image-choice-card {
+  transition: box-shadow 0.15s ease-out;
 }
 
 /* Focus styles */
 button:focus-visible,
 input:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid #0D9488;
   outline-offset: 2px;
 }
 
 /* Remove default input styles */
 input[type="text"],
 input[type="email"],
-input[type="tel"],
-input[type="number"] {
+input[type="tel"] {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -49,5 +119,5 @@ input[type="number"] {
 
 /* Placeholder styles */
 ::placeholder {
-  opacity: 0.5;
+  color: rgba(13, 148, 136, 0.4);
 }

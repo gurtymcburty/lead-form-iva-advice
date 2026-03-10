@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     const sanitizedData = sanitizeFormData(body.answers);
 
     // Validate required sanitized fields
-    if (!sanitizedData.name || !sanitizedData.email || !sanitizedData.phone) {
+    if (!sanitizedData.firstName || !sanitizedData.lastName || !sanitizedData.email || !sanitizedData.phone) {
       return NextResponse.json(
         { error: 'Invalid form data' },
         { status: 400 }
@@ -81,18 +81,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check consent
+    if (sanitizedData.consent !== 'accept') {
+      return NextResponse.json(
+        { error: 'Consent is required' },
+        { status: 400 }
+      );
+    }
+
     // Prepare Hubsolv payload
     const hubsolvPayload = {
       source: 'iva-advice.co',
       leadGenerator: LEAD_GENERATOR,
-      firstName: sanitizedData.name.split(' ')[0],
-      lastName: sanitizedData.name.split(' ').slice(1).join(' ') || '',
+      firstName: sanitizedData.firstName,
+      lastName: sanitizedData.lastName,
       email: sanitizedData.email,
       phone: sanitizedData.phone,
       debtAmount: sanitizedData.debtAmount,
-      numberOfCreditors: sanitizedData.creditors,
+      numberOfDebts: sanitizedData.debtCount,
       employmentStatus: sanitizedData.employment,
-      homeowner: sanitizedData.homeowner === 'yes',
       metadata: {
         timeOnForm: body.metadata?.timeOnForm,
         userAgent: body.metadata?.userAgent?.substring(0, 500),

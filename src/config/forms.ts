@@ -1,36 +1,33 @@
-export type FieldType = 'multiple_choice' | 'text' | 'email' | 'tel' | 'number';
+export type FieldType = 'multiple_choice' | 'image_choice' | 'text' | 'email' | 'tel';
 
 export interface FormOption {
   key: string;
   label: string;
   value: string;
+  imageUrl?: string;
 }
 
 export interface FormStep {
   id: string;
   question: string;
+  dynamicQuestion?: (answers: Record<string, string>) => string;
   helperText?: string;
+  helperHtml?: string;
   fieldType: FieldType;
   options?: FormOption[];
   placeholder?: string;
   required?: boolean;
-  validation?: {
-    pattern?: RegExp;
-    minLength?: number;
-    maxLength?: number;
-    message?: string;
-  };
 }
 
 export interface FormTheme {
   primaryColor: string;
+  primaryColorRgb: string;
   backgroundColor: string;
   textColor: string;
-  secondaryTextColor: string;
-  buttonColor: string;
+  subtitleColor: string;
+  inputTextColor: string;
   buttonTextColor: string;
-  optionBorderColor: string;
-  optionHoverBg: string;
+  disabledNavColor: string;
 }
 
 export interface FormConfig {
@@ -54,9 +51,8 @@ export const formConfig: FormConfig = {
       ],
     },
     {
-      id: 'creditors',
-      question: 'How many companies do you owe money to?',
-      helperText: 'Include all creditors such as credit cards, loans, and overdrafts',
+      id: 'debt_count',
+      question: 'How many debts do you have?',
       fieldType: 'multiple_choice',
       required: true,
       options: [
@@ -68,72 +64,74 @@ export const formConfig: FormConfig = {
     },
     {
       id: 'employment',
-      question: 'What is your current employment status?',
-      fieldType: 'multiple_choice',
+      question: 'What is your employment status?',
+      fieldType: 'image_choice',
       required: true,
       options: [
-        { key: 'A', label: 'Employed', value: 'employed' },
-        { key: 'B', label: 'Self-Employed', value: 'self_employed' },
-        { key: 'C', label: 'Unemployed', value: 'unemployed' },
-        { key: 'D', label: 'Retired', value: 'retired' },
+        { key: 'A', label: 'Employed', value: 'employed', imageUrl: 'https://images.typeform.com/images/D5zea7G2mCpQ' },
+        { key: 'B', label: 'Self-Employed', value: 'self_employed', imageUrl: 'https://images.typeform.com/images/mFMxZB4J6jcY' },
+        { key: 'C', label: 'Retired', value: 'retired', imageUrl: 'https://images.typeform.com/images/ySxvTpPb9tbX' },
+        { key: 'D', label: 'Unemployed', value: 'unemployed', imageUrl: 'https://images.typeform.com/images/ZV5wVs6rGj6g' },
       ],
-    },
-    {
-      id: 'homeowner',
-      question: 'Are you a homeowner?',
-      fieldType: 'multiple_choice',
-      required: true,
-      options: [
-        { key: 'A', label: 'Yes', value: 'yes' },
-        { key: 'B', label: 'No', value: 'no' },
-      ],
-    },
-    {
-      id: 'name',
-      question: 'What is your name?',
-      helperText: 'We need this to prepare your free assessment',
-      fieldType: 'text',
-      placeholder: 'Enter your full name',
-      required: true,
-      validation: {
-        minLength: 2,
-        maxLength: 100,
-        message: 'Please enter your full name',
-      },
     },
     {
       id: 'email',
       question: 'What is your email address?',
-      helperText: "We'll send your free debt assessment here",
+      helperText: 'We only use this to email you details about possible solutions to your debt problem. You can unsubscribe at any time.',
       fieldType: 'email',
       placeholder: 'name@example.com',
       required: true,
-      validation: {
-        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        message: 'Please enter a valid email address',
+    },
+    {
+      id: 'first_name',
+      question: 'What is your first name?',
+      fieldType: 'text',
+      placeholder: 'Type your answer here...',
+      required: true,
+    },
+    {
+      id: 'last_name',
+      question: ', what is your last name?',
+      dynamicQuestion: (answers) => {
+        const firstName = answers.first_name || '';
+        return firstName ? `${firstName}, what is your last name?` : 'What is your last name?';
       },
+      fieldType: 'text',
+      placeholder: 'Type your answer here...',
+      required: true,
     },
     {
       id: 'phone',
-      question: 'What is your phone number?',
-      helperText: 'A qualified advisor will call you to discuss your options',
-      fieldType: 'tel',
-      placeholder: '07XXX XXXXXX',
-      required: true,
-      validation: {
-        pattern: /^(\+44|0)[1-9][0-9]{8,10}$/,
-        message: 'Please enter a valid UK phone number',
+      question: ', what is your phone number?',
+      dynamicQuestion: (answers) => {
+        const firstName = answers.first_name || '';
+        return firstName ? `${firstName}, what is your phone number?` : 'What is your phone number?';
       },
+      helperText: 'We only use this if we need to speak to you about a possible solution to your finances. We do not share your number, in line with our Data Protection policies.',
+      fieldType: 'tel',
+      placeholder: '07400 123456',
+      required: true,
+    },
+    {
+      id: 'consent',
+      question: 'Keeping Your Data Safe',
+      helperHtml: 'By completing this form you are agreeing with our <a href="https://www.iva-advice.co/privacy-policy/" target="_blank" rel="noopener">Privacy Policy</a> and <a href="https://www.iva-advice.co/terms-and-conditions/" target="_blank" rel="noopener">Terms and Conditions</a>.',
+      fieldType: 'multiple_choice',
+      required: true,
+      options: [
+        { key: 'A', label: 'I accept', value: 'accept' },
+        { key: 'B', label: "I don't accept", value: 'decline' },
+      ],
     },
   ],
   theme: {
-    primaryColor: '#10b981',
-    backgroundColor: '#ffffff',
-    textColor: '#1f2937',
-    secondaryTextColor: '#6b7280',
-    buttonColor: '#10b981',
-    buttonTextColor: '#ffffff',
-    optionBorderColor: '#10b981',
-    optionHoverBg: 'rgba(16, 185, 129, 0.1)',
+    primaryColor: '#0D9488',
+    primaryColorRgb: '13, 148, 136',
+    backgroundColor: '#FFFFFF',
+    textColor: '#3D3D3D',
+    subtitleColor: '#646464',
+    inputTextColor: '#0D9488',
+    buttonTextColor: '#E7F4F3',
+    disabledNavColor: '#9ED4CF',
   },
 };

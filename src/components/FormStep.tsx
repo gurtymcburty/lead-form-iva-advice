@@ -1,18 +1,18 @@
 'use client';
 
-import { FormConfig, FormStep as FormStepType } from '@/config/forms';
-import { OptionButton } from './OptionButton';
-import { TextInput } from './TextInput';
+import { FormStep as FormStepType, FormTheme } from '@/config/forms';
+import Image from 'next/image';
 
 interface FormStepProps {
   step: FormStepType;
   stepIndex: number;
   totalSteps: number;
   value: string;
+  answers: Record<string, string>;
   onChange: (value: string) => void;
   onNext: () => void;
   onPrev: () => void;
-  theme: FormConfig['theme'];
+  theme: FormTheme;
   error?: string;
   isSubmitting?: boolean;
 }
@@ -22,6 +22,7 @@ export function FormStep({
   stepIndex,
   totalSteps,
   value,
+  answers,
   onChange,
   onNext,
   onPrev,
@@ -29,133 +30,276 @@ export function FormStep({
   error,
   isSubmitting,
 }: FormStepProps) {
-  const isLastStep = stepIndex === totalSteps - 1;
   const canGoBack = stepIndex > 0;
+  const questionText = step.dynamicQuestion ? step.dynamicQuestion(answers) : step.question;
+
+  // For consent question, show "See My Options" when accepted
+  const isConsentAccepted = step.id === 'consent' && value === 'accept';
+  const buttonText = isSubmitting
+    ? 'Submitting...'
+    : isConsentAccepted
+      ? 'See My Options'
+      : 'OK';
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && value) {
+    if (e.key === 'Enter' && value && !isSubmitting) {
       e.preventDefault();
       onNext();
     }
   };
 
+  const progressPercent = ((stepIndex + 1) / totalSteps) * 100;
+
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center px-4 py-8"
-      style={{ backgroundColor: theme.backgroundColor }}
-      onKeyDown={handleKeyDown}
-    >
-      <div className="w-full max-w-2xl">
-        {/* Question number indicator */}
-        <div className="flex items-center gap-2 mb-4">
-          <span
-            className="flex items-center justify-center w-6 h-6 rounded text-xs font-bold"
-            style={{ backgroundColor: theme.primaryColor, color: theme.buttonTextColor }}
-          >
-            {stepIndex + 1}
-          </span>
-          <span className="text-sm" style={{ color: theme.secondaryTextColor }}>
-            of {totalSteps}
-          </span>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: theme.backgroundColor }}>
+      {/* Progress Bars */}
+      <div className="fixed top-0 left-0 right-0 z-50">
+        {/* Bar 1 - Page load indicator */}
+        <div className="h-1 w-full progress-track">
+          <div className="h-full w-full" style={{ backgroundColor: '#3D3D3D' }} />
         </div>
-
-        {/* Question */}
-        <h1
-          className="text-2xl md:text-3xl font-semibold mb-2"
-          style={{ color: theme.textColor }}
-        >
-          {step.question}
-          {step.required && <span style={{ color: theme.primaryColor }}>*</span>}
-        </h1>
-
-        {/* Helper text */}
-        {step.helperText && (
-          <p className="text-base mb-6" style={{ color: theme.secondaryTextColor }}>
-            {step.helperText}
-          </p>
-        )}
-
-        {/* Options or Input */}
-        <div className="mt-6">
-          {step.fieldType === 'multiple_choice' && step.options ? (
-            <div className="flex flex-wrap gap-3">
-              {step.options.map((option) => (
-                <OptionButton
-                  key={option.key}
-                  option={option}
-                  selected={value === option.value}
-                  onClick={() => {
-                    onChange(option.value);
-                    // Auto-advance for multiple choice after a brief delay
-                    setTimeout(onNext, 300);
-                  }}
-                  theme={theme}
-                />
-              ))}
-            </div>
-          ) : (
-            <TextInput
-              type={step.fieldType as 'text' | 'email' | 'tel' | 'number'}
-              value={value}
-              onChange={onChange}
-              placeholder={step.placeholder}
-              theme={theme}
-              error={error}
-            />
-          )}
-        </div>
-
-        {/* Submit/Next button for text inputs */}
-        {step.fieldType !== 'multiple_choice' && (
-          <div className="mt-6">
-            <button
-              type="button"
-              onClick={onNext}
-              disabled={!value || isSubmitting}
-              className="px-8 py-3 rounded-lg font-semibold text-base transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        {/* Bar 2 - Question progress */}
+        <div className="h-[11px] flex items-center">
+          <div className="h-[3px] w-full flex">
+            <div
+              className="h-full transition-all duration-300"
               style={{
-                backgroundColor: theme.buttonColor,
-                color: theme.buttonTextColor,
+                width: `${progressPercent}%`,
+                backgroundColor: theme.primaryColor
               }}
-            >
-              {isSubmitting ? 'Submitting...' : isLastStep ? 'Submit' : 'OK'}
-            </button>
-            <span className="ml-3 text-sm" style={{ color: theme.secondaryTextColor }}>
-              press <strong>Enter</strong>
-            </span>
+            />
+            <div
+              className="h-full flex-1"
+              style={{ backgroundColor: `rgba(${theme.primaryColorRgb}, 0.4)` }}
+            />
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Navigation arrows */}
-      <div className="fixed bottom-6 right-6 flex gap-1">
+      {/* Form Content */}
+      <div
+        className="flex-1 flex items-center justify-center px-4 sm:px-20 pt-16 pb-24"
+        onKeyDown={handleKeyDown}
+      >
+        <div className="w-full max-w-[880px] animate-fadeInUp">
+          <fieldset className="border-0 p-0 m-0">
+            {/* Question Title */}
+            <legend className="flex items-start gap-2 mb-2">
+              {/* Question Number Badge */}
+              <span
+                className="inline-flex items-center justify-center text-[11px] font-bold text-white shrink-0"
+                style={{
+                  backgroundColor: theme.primaryColor,
+                  borderRadius: '5px 3px 3px 5px',
+                  width: '16px',
+                  height: '19px',
+                  marginTop: '6px'
+                }}
+              >
+                {stepIndex + 1}
+              </span>
+              <span
+                className="text-[26px] font-normal leading-[34px]"
+                style={{ color: theme.textColor }}
+              >
+                {questionText}
+                {step.required && <span style={{ color: theme.primaryColor }}>*</span>}
+              </span>
+            </legend>
+
+            {/* Helper Text */}
+            {step.helperText && (
+              <p
+                className="text-[18px] font-normal leading-[24px] mt-2 mb-6 ml-6"
+                style={{ color: theme.subtitleColor }}
+              >
+                {step.helperText}
+              </p>
+            )}
+
+            {/* Helper HTML (for links) */}
+            {step.helperHtml && (
+              <p
+                className="helper-html text-[18px] font-normal leading-[24px] mt-2 mb-6 ml-6"
+                style={{ color: theme.subtitleColor }}
+                dangerouslySetInnerHTML={{ __html: step.helperHtml }}
+              />
+            )}
+
+            {/* Options or Input */}
+            <div className="mt-4 ml-6">
+              {step.fieldType === 'multiple_choice' && step.options && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {step.options.map((option) => {
+                    const isSelected = value === option.value;
+                    return (
+                      <button
+                        key={option.key}
+                        type="button"
+                        onClick={() => onChange(option.value)}
+                        className="choice-button flex items-center gap-2 px-[10px] py-[6px] rounded-lg text-left h-[44px]"
+                        style={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.6)',
+                          boxShadow: isSelected
+                            ? `${theme.primaryColor} 0px 0px 0px 2px`
+                            : `rgba(${theme.primaryColorRgb}, 0.1) 0px 0px 0px 1px`,
+                        }}
+                      >
+                        {/* Key Badge */}
+                        <span
+                          className="flex items-center justify-center w-6 h-6 rounded text-[12px] font-semibold shrink-0"
+                          style={{
+                            backgroundColor: isSelected ? theme.primaryColor : 'rgba(255, 255, 255, 0.4)',
+                            color: isSelected ? '#FFFFFF' : theme.primaryColor,
+                            border: isSelected
+                              ? `1px solid ${theme.primaryColor}`
+                              : `1px solid rgba(${theme.primaryColorRgb}, 0.24)`,
+                            borderRadius: '4px',
+                          }}
+                        >
+                          {option.key}
+                        </span>
+                        {/* Label */}
+                        <span
+                          className="text-[18px] font-normal leading-[24px]"
+                          style={{ color: theme.primaryColor }}
+                        >
+                          {option.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {step.fieldType === 'image_choice' && step.options && (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                  {step.options.map((option) => {
+                    const isSelected = value === option.value;
+                    return (
+                      <button
+                        key={option.key}
+                        type="button"
+                        onClick={() => onChange(option.value)}
+                        className="image-choice-card flex flex-col items-center p-3 rounded-lg"
+                        style={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.6)',
+                          boxShadow: isSelected
+                            ? `${theme.primaryColor} 0px 0px 0px 2px`
+                            : `rgba(${theme.primaryColorRgb}, 0.1) 0px 0px 0px 1px`,
+                        }}
+                      >
+                        {/* Image */}
+                        {option.imageUrl && (
+                          <div className="w-[144px] h-[144px] relative mb-2">
+                            <Image
+                              src={option.imageUrl}
+                              alt={option.label}
+                              fill
+                              className="object-contain"
+                              unoptimized
+                            />
+                          </div>
+                        )}
+                        {/* Key Badge + Label */}
+                        <div className="flex items-center gap-2 w-full">
+                          <span
+                            className="flex items-center justify-center w-6 h-6 rounded text-[12px] font-semibold shrink-0"
+                            style={{
+                              backgroundColor: isSelected ? theme.primaryColor : 'rgba(255, 255, 255, 0.4)',
+                              color: isSelected ? '#FFFFFF' : theme.primaryColor,
+                              border: isSelected
+                                ? `1px solid ${theme.primaryColor}`
+                                : `1px solid rgba(${theme.primaryColorRgb}, 0.24)`,
+                              borderRadius: '4px',
+                            }}
+                          >
+                            {option.key}
+                          </span>
+                          <span
+                            className="text-[18px] font-normal leading-[24px]"
+                            style={{ color: theme.primaryColor }}
+                          >
+                            {option.label}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {(step.fieldType === 'text' || step.fieldType === 'email' || step.fieldType === 'tel') && (
+                <div className="max-w-[600px]">
+                  <input
+                    type={step.fieldType === 'tel' ? 'tel' : step.fieldType === 'email' ? 'email' : 'text'}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={step.placeholder}
+                    className="typeform-input w-full bg-transparent border-0 text-[26px] font-normal py-2 px-0 outline-none"
+                    style={{
+                      color: theme.inputTextColor,
+                      boxShadow: `rgba(${theme.primaryColorRgb}, 0.3) 0px 1px 0px 0px`,
+                    }}
+                    autoComplete={step.fieldType === 'email' ? 'email' : step.fieldType === 'tel' ? 'tel' : 'off'}
+                  />
+                  {error && (
+                    <p className="mt-2 text-sm text-red-500">{error}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* OK Button */}
+            <div className="mt-6 ml-6">
+              <button
+                type="button"
+                onClick={onNext}
+                disabled={!value || isSubmitting}
+                className="ok-button h-10 px-4 rounded-lg text-[14px] font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  color: theme.buttonTextColor,
+                  boxShadow: `${theme.primaryColor} 0px 0px 0px 1px inset`,
+                }}
+              >
+                {buttonText}
+              </button>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+
+      {/* Navigation Buttons */}
+      <div className="fixed bottom-6 right-6 flex">
         <button
           type="button"
           onClick={onPrev}
           disabled={!canGoBack}
-          className="w-10 h-10 rounded flex items-center justify-center transition-all duration-200 disabled:opacity-30"
+          className="nav-button w-8 h-8 flex items-center justify-center disabled:cursor-not-allowed"
           style={{
-            backgroundColor: theme.optionHoverBg,
-            color: theme.primaryColor,
+            borderRadius: '8px 2px 2px 8px',
+            color: canGoBack ? theme.buttonTextColor : theme.disabledNavColor,
+            backgroundColor: canGoBack ? 'rgba(255, 255, 255, 0.3)' : 'transparent',
           }}
           aria-label="Previous question"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <polyline points="18,15 12,9 6,15" />
           </svg>
         </button>
         <button
           type="button"
           onClick={onNext}
-          disabled={!value}
-          className="w-10 h-10 rounded flex items-center justify-center transition-all duration-200 disabled:opacity-30"
+          disabled={!value || isSubmitting}
+          className="nav-button w-8 h-8 flex items-center justify-center disabled:cursor-not-allowed"
           style={{
-            backgroundColor: theme.primaryColor,
-            color: theme.buttonTextColor,
+            borderRadius: '2px 8px 8px 2px',
+            color: value && !isSubmitting ? theme.buttonTextColor : theme.disabledNavColor,
+            backgroundColor: value && !isSubmitting ? 'rgba(255, 255, 255, 0.3)' : 'transparent',
           }}
           aria-label="Next question"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <polyline points="6,9 12,15 18,9" />
           </svg>
         </button>

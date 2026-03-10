@@ -43,23 +43,25 @@ export function sanitizeName(name: string): string {
 }
 
 export interface SanitizedFormData {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   debtAmount: string;
-  creditors: string;
+  debtCount: string;
   employment: string;
-  homeowner: string;
+  consent: string;
 }
 
 export function sanitizeFormData(answers: Record<string, string>): SanitizedFormData {
   return {
-    name: sanitizeName(answers.name || ''),
+    firstName: sanitizeName(answers.first_name || ''),
+    lastName: sanitizeName(answers.last_name || ''),
     email: sanitizeEmail(answers.email || ''),
     phone: sanitizePhone(answers.phone || ''),
     debtAmount: sanitizeString(answers.debt_amount || ''),
-    creditors: sanitizeString(answers.creditors || ''),
+    debtCount: sanitizeString(answers.debt_count || ''),
     employment: sanitizeString(answers.employment || ''),
-    homeowner: sanitizeString(answers.homeowner || ''),
+    consent: sanitizeString(answers.consent || ''),
   };
 }
