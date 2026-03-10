@@ -1,0 +1,35 @@
+{
+  "url": "https://upsave.typeform.com/to/fCaQzF",
+  "title": "form2-fCaQzF",
+  "steps": [
+    {
+      "stepNumber": 1,
+      "questionText": "What is the total sum of your debt?*",
+      "fieldType": "multiple_choice",
+      "options": [
+        "KeyAUnder £5000",
+        "Under £5000",
+        "KeyB£5001-£19,999",
+        "£5001-£19,999",
+        "KeyC£20,000 or more",
+        "£20,000 or more",
+        "KeyA1",
+        "1",
+        "KeyB2",
+        "2",
+        "KeyC3 or more",
+        "3 or more",
+        "KeyDUnsure",
+        "Unsure"
+      ],
+      "buttonText": "KeyAUnder £5000"
+    }
+  ],
+  "styles": {
+    "primaryColor": "rgba(38, 38, 38, 0.3)",
+    "backgroundColor": "rgba(0, 0, 0, 0)",
+    "textColor": "#1f2937",
+    "buttonColor": "rgba(38, 38, 38, 0.3)",
+    "fontFamily": "system-ui, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\""
+  }
+}

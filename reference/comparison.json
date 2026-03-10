@@ -1,0 +1,19 @@
+{
+  "form1": {
+    "url": "https://upsave.typeform.com/to/qS2Nsw",
+    "stepCount": 1,
+    "steps": [
+      "How much debt do you have in total?*"
+    ]
+  },
+  "form2": {
+    "url": "https://upsave.typeform.com/to/fCaQzF",
+    "stepCount": 1,
+    "steps": [
+      "What is the total sum of your debt?*"
+    ]
+  },
+  "differences": [
+    "Step 1 differs"
+  ]
+}
