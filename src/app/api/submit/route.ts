@@ -5,7 +5,11 @@ import { sanitizeFormData } from '@/lib/sanitize';
 // Hubsolv API configuration
 const HUBSOLV_API_URL = process.env.HUBSOLV_ENDPOINT || 'https://synigise.hubsolv.com/api/client/format/json';
 const HUBSOLV_API_KEY = process.env.HUBSOLV_API_KEY || process.env.HUBSOLV_PASSWORD || '';
-const HUBSOLV_AUTH = process.env.HUBSOLV_AUTH || 'admin|1234';
+// Auth format: username|password - try from env vars or fallback
+const HUBSOLV_AUTH = process.env.HUBSOLV_AUTH ||
+  (process.env.HUBSOLV_USERNAME && process.env.HUBSOLV_PASSWORD
+    ? `${process.env.HUBSOLV_USERNAME}|${process.env.HUBSOLV_PASSWORD}`
+    : 'admin|1234');
 const HUBSOLV_CAMPAIGN_ID = process.env.HUBSOLV_CAMPAIGN_ID || '11';
 
 interface SubmitPayload {
@@ -178,6 +182,10 @@ export async function POST(request: NextRequest) {
               status: hubsolvResponse.status,
               response: errorText.substring(0, 500),
               endpoint: HUBSOLV_API_URL,
+              payloadSent: {
+                ...hubsolvPayload,
+                'HUBSOLV-API-KEY': hubsolvPayload['HUBSOLV-API-KEY'] ? '***SET***' : '***MISSING***',
+              },
             }
           },
           { status: 500 }
