@@ -3,7 +3,7 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { sanitizeFormData } from '@/lib/sanitize';
 
 // Hubsolv API configuration
-const HUBSOLV_API_URL = process.env.HUBSOLV_API_URL || 'https://api.hubsolv.com/leads';
+const HUBSOLV_API_URL = process.env.HUBSOLV_ENDPOINT || process.env.HUBSOLV_API_URL || 'https://api.hubsolv.com/leads';
 const HUBSOLV_USERNAME = process.env.HUBSOLV_USERNAME || '';
 const HUBSOLV_PASSWORD = process.env.HUBSOLV_PASSWORD || '';
 
@@ -123,6 +123,13 @@ export async function POST(request: NextRequest) {
     };
 
     // Submit to Hubsolv API
+    console.log('Hubsolv config:', {
+      hasUrl: !!HUBSOLV_API_URL,
+      url: HUBSOLV_API_URL,
+      hasUsername: !!HUBSOLV_USERNAME,
+      hasPassword: !!HUBSOLV_PASSWORD,
+    });
+
     if (HUBSOLV_USERNAME && HUBSOLV_PASSWORD) {
       const authHeader = Buffer.from(`${HUBSOLV_USERNAME}:${HUBSOLV_PASSWORD}`).toString('base64');
 
