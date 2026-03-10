@@ -145,10 +145,18 @@ export async function POST(request: NextRequest) {
       if (!hubsolvResponse.ok) {
         const errorText = await hubsolvResponse.text();
         console.error('Hubsolv API error:', hubsolvResponse.status, errorText);
+        console.error('Hubsolv payload was:', JSON.stringify(hubsolvPayload, null, 2));
 
-        // Don't expose internal errors to client
+        // Temporarily expose error for debugging - REMOVE IN PRODUCTION
         return NextResponse.json(
-          { error: 'Failed to process submission. Please try again.' },
+          {
+            error: 'Hubsolv API error',
+            debug: {
+              status: hubsolvResponse.status,
+              response: errorText.substring(0, 500),
+              endpoint: HUBSOLV_API_URL,
+            }
+          },
           { status: 500 }
         );
       }
