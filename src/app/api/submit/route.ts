@@ -3,12 +3,10 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { sanitizeFormData } from '@/lib/sanitize';
 
 // Hubsolv API configuration
-const HUBSOLV_API_URL = process.env.HUBSOLV_ENDPOINT || process.env.HUBSOLV_API_URL || 'https://api.hubsolv.com/leads';
-const HUBSOLV_USERNAME = process.env.HUBSOLV_USERNAME || '';
-const HUBSOLV_PASSWORD = process.env.HUBSOLV_PASSWORD || '';
-
-// Hardcoded lead generator
-const LEAD_GENERATOR = 'iva-advice';
+const HUBSOLV_API_URL = process.env.HUBSOLV_ENDPOINT || 'https://synigise.hubsolv.com/api/client/format/json';
+const HUBSOLV_API_KEY = process.env.HUBSOLV_API_KEY || process.env.HUBSOLV_PASSWORD || '';
+const HUBSOLV_AUTH = process.env.HUBSOLV_AUTH || 'admin|1234';
+const HUBSOLV_CAMPAIGN_ID = process.env.HUBSOLV_CAMPAIGN_ID || '11';
 
 interface SubmitPayload {
   answers: Record<string, string>;
@@ -103,44 +101,66 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prepare Hubsolv payload - include API key in body as some APIs expect this
+    // Map debt_amount values to display labels
+    const debtAmountLabels: Record<string, string> = {
+      'under_5000': 'Less than £5000',
+      '5001_20000': '£5001-£20,000',
+      'over_20000': '£20,001 or more',
+      'not_sure': 'Not Sure',
+    };
+
+    // Map debt_count values to display labels
+    const debtCountLabels: Record<string, string> = {
+      '1': '1',
+      '2': '2',
+      '3_or_more': '3 or More',
+      'not_sure': 'Not sure',
+    };
+
+    // Map employment values to display labels
+    const employmentLabels: Record<string, string> = {
+      'employed': 'Employed',
+      'self_employed': 'Self-Employed',
+      'retired': 'Retired',
+      'unemployed': 'Unemployed',
+    };
+
+    // Format phone number with +44 prefix if needed
+    let formattedPhone = sanitizedData.phone;
+    if (formattedPhone.startsWith('0')) {
+      formattedPhone = '+44' + formattedPhone.substring(1);
+    }
+
+    // Prepare Hubsolv payload matching their exact format
     const hubsolvPayload = {
-      api_key: HUBSOLV_PASSWORD, // Try including API key in payload
-      username: HUBSOLV_USERNAME,
-      source: 'iva-advice.co',
-      leadGenerator: LEAD_GENERATOR,
-      firstName: sanitizedData.firstName,
-      lastName: sanitizedData.lastName,
-      email: sanitizedData.email,
-      phone: sanitizedData.phone,
-      debtAmount: sanitizedData.debtAmount,
-      numberOfDebts: sanitizedData.debtCount,
-      employmentStatus: sanitizedData.employment,
-      metadata: {
-        timeOnForm: body.metadata?.timeOnForm,
-        userAgent: body.metadata?.userAgent?.substring(0, 500),
-        submittedAt: body.metadata?.timestamp || new Date().toISOString(),
-        ipAddress: clientIP,
-      },
+      'HUBSOLV-API-KEY': HUBSOLV_API_KEY,
+      'campaignid': HUBSOLV_CAMPAIGN_ID,
+      'firstname': sanitizedData.firstName,
+      'lastname': sanitizedData.lastName,
+      'email': sanitizedData.email,
+      'phone_mobile': formattedPhone,
+      'lead_source': 'Upsave',
+      'lead_type': 'website_lead',
+      'lead_generator': 'iva-advice.co',
+      'debt_level': debtAmountLabels[sanitizedData.debtAmount] || sanitizedData.debtAmount,
+      'total_debts': debtCountLabels[sanitizedData.debtCount] || sanitizedData.debtCount,
+      'employment_status': employmentLabels[sanitizedData.employment] || sanitizedData.employment,
+      'auth': HUBSOLV_AUTH,
     };
 
     // Submit to Hubsolv API
     console.log('Hubsolv config:', {
-      hasUrl: !!HUBSOLV_API_URL,
       url: HUBSOLV_API_URL,
-      hasUsername: !!HUBSOLV_USERNAME,
-      hasPassword: !!HUBSOLV_PASSWORD,
+      hasApiKey: !!HUBSOLV_API_KEY,
+      campaignId: HUBSOLV_CAMPAIGN_ID,
     });
+    console.log('Hubsolv payload:', JSON.stringify(hubsolvPayload, null, 2));
 
-    if (HUBSOLV_USERNAME && HUBSOLV_PASSWORD) {
-      const authHeader = Buffer.from(`${HUBSOLV_USERNAME}:${HUBSOLV_PASSWORD}`).toString('base64');
-
+    if (HUBSOLV_API_KEY) {
       const hubsolvResponse = await fetch(HUBSOLV_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Basic ${authHeader}`,
-          'X-API-Key': HUBSOLV_PASSWORD, // Try API key header
         },
         body: JSON.stringify(hubsolvPayload),
       });
@@ -171,8 +191,8 @@ export async function POST(request: NextRequest) {
         console.log('Hubsolv submission successful (non-JSON response)');
       }
     } else {
-      // Development mode - log the payload
-      console.log('Development mode - would submit to Hubsolv:', JSON.stringify(hubsolvPayload, null, 2));
+      // Development mode - no API key configured
+      console.log('Development mode (no HUBSOLV_API_KEY) - would submit:', JSON.stringify(hubsolvPayload, null, 2));
     }
 
     return NextResponse.json(
