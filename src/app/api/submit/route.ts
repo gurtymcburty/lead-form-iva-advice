@@ -103,8 +103,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prepare Hubsolv payload
+    // Prepare Hubsolv payload - include API key in body as some APIs expect this
     const hubsolvPayload = {
+      api_key: HUBSOLV_PASSWORD, // Try including API key in payload
+      username: HUBSOLV_USERNAME,
       source: 'iva-advice.co',
       leadGenerator: LEAD_GENERATOR,
       firstName: sanitizedData.firstName,
@@ -138,6 +140,7 @@ export async function POST(request: NextRequest) {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Basic ${authHeader}`,
+          'X-API-Key': HUBSOLV_PASSWORD, // Try API key header
         },
         body: JSON.stringify(hubsolvPayload),
       });
