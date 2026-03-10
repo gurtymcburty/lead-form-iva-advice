@@ -48,7 +48,19 @@ export function FormStep({
     }
   };
 
+  // Handle option click - select and auto-advance
+  const handleOptionClick = (optionValue: string) => {
+    onChange(optionValue);
+    // Auto-advance after a brief delay for visual feedback
+    setTimeout(() => {
+      onNext();
+    }, 150);
+  };
+
   const progressPercent = ((stepIndex + 1) / totalSteps) * 100;
+
+  // Check if this is a choice-based question (multiple_choice or image_choice)
+  const isChoiceQuestion = step.fieldType === 'multiple_choice' || step.fieldType === 'image_choice';
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: theme.backgroundColor }}>
@@ -136,7 +148,7 @@ export function FormStep({
                       <button
                         key={option.key}
                         type="button"
-                        onClick={() => onChange(option.value)}
+                        onClick={() => handleOptionClick(option.value)}
                         className="choice-button flex items-center gap-2 px-[10px] py-[6px] rounded-lg text-left h-[44px]"
                         style={{
                           backgroundColor: 'rgba(255, 255, 255, 0.6)',
@@ -180,7 +192,7 @@ export function FormStep({
                       <button
                         key={option.key}
                         type="button"
-                        onClick={() => onChange(option.value)}
+                        onClick={() => handleOptionClick(option.value)}
                         className="image-choice-card flex flex-col items-center p-3 rounded-lg"
                         style={{
                           backgroundColor: 'rgba(255, 255, 255, 0.6)',
@@ -250,21 +262,28 @@ export function FormStep({
               )}
             </div>
 
-            {/* OK Button */}
-            <div className="mt-6 ml-6">
-              <button
-                type="button"
-                onClick={onNext}
-                disabled={!value || isSubmitting}
-                className="ok-button h-10 px-4 rounded-lg text-[14px] font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{
-                  color: theme.buttonTextColor,
-                  boxShadow: `${theme.primaryColor} 0px 0px 0px 1px inset`,
-                }}
-              >
-                {buttonText}
-              </button>
-            </div>
+            {/* OK Button - only show for text input fields, not for choice questions */}
+            {!isChoiceQuestion && (
+              <div className="mt-6 ml-6">
+                <button
+                  type="button"
+                  onClick={onNext}
+                  disabled={!value || isSubmitting}
+                  className="h-10 px-4 rounded-lg text-[14px] font-semibold transition-opacity"
+                  style={{
+                    backgroundColor: theme.primaryColor,
+                    color: theme.buttonTextColor,
+                    opacity: !value || isSubmitting ? 0.5 : 1,
+                    cursor: !value || isSubmitting ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {buttonText}
+                </button>
+                <span className="ml-3 text-[13px]" style={{ color: theme.subtitleColor }}>
+                  press <strong>Enter ↵</strong>
+                </span>
+              </div>
+            )}
           </fieldset>
         </div>
       </div>
@@ -275,11 +294,12 @@ export function FormStep({
           type="button"
           onClick={onPrev}
           disabled={!canGoBack}
-          className="nav-button w-8 h-8 flex items-center justify-center disabled:cursor-not-allowed"
+          className="w-8 h-8 flex items-center justify-center transition-colors"
           style={{
             borderRadius: '8px 2px 2px 8px',
+            backgroundColor: canGoBack ? theme.primaryColor : 'transparent',
             color: canGoBack ? theme.buttonTextColor : theme.disabledNavColor,
-            backgroundColor: canGoBack ? 'rgba(255, 255, 255, 0.3)' : 'transparent',
+            cursor: canGoBack ? 'pointer' : 'not-allowed',
           }}
           aria-label="Previous question"
         >
@@ -291,11 +311,12 @@ export function FormStep({
           type="button"
           onClick={onNext}
           disabled={!value || isSubmitting}
-          className="nav-button w-8 h-8 flex items-center justify-center disabled:cursor-not-allowed"
+          className="w-8 h-8 flex items-center justify-center transition-colors"
           style={{
             borderRadius: '2px 8px 8px 2px',
+            backgroundColor: value && !isSubmitting ? theme.primaryColor : 'transparent',
             color: value && !isSubmitting ? theme.buttonTextColor : theme.disabledNavColor,
-            backgroundColor: value && !isSubmitting ? 'rgba(255, 255, 255, 0.3)' : 'transparent',
+            cursor: value && !isSubmitting ? 'pointer' : 'not-allowed',
           }}
           aria-label="Next question"
         >
