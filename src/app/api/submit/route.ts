@@ -21,6 +21,18 @@ interface SubmitPayload {
 
 export async function POST(request: NextRequest) {
   try {
+    // Parse request body first
+    let body: SubmitPayload;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
     // Rate limiting
     const clientIP = getClientIP(request);
     const rateLimitResult = rateLimit(clientIP, {
@@ -41,8 +53,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse request body
-    const body: SubmitPayload = await request.json();
+    // Log received data for debugging
+    console.log('Received submission:', JSON.stringify(body.answers, null, 2));
 
     // Validate required fields
     if (!body.answers) {
@@ -54,6 +66,7 @@ export async function POST(request: NextRequest) {
 
     // Sanitize form data
     const sanitizedData = sanitizeFormData(body.answers);
+    console.log('Sanitized data:', JSON.stringify(sanitizedData, null, 2));
 
     // Validate required sanitized fields
     if (!sanitizedData.firstName || !sanitizedData.lastName || !sanitizedData.email || !sanitizedData.phone) {
@@ -132,8 +145,12 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const hubsolvResult = await hubsolvResponse.json();
-      console.log('Hubsolv submission successful:', hubsolvResult.id || 'no-id');
+      try {
+        const hubsolvResult = await hubsolvResponse.json();
+        console.log('Hubsolv submission successful:', hubsolvResult.id || 'no-id');
+      } catch {
+        console.log('Hubsolv submission successful (non-JSON response)');
+      }
     } else {
       // Development mode - log the payload
       console.log('Development mode - would submit to Hubsolv:', JSON.stringify(hubsolvPayload, null, 2));
@@ -152,7 +169,8 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error('Submission error:', error);
+    console.error('Submission error:', error instanceof Error ? error.message : error);
+    console.error('Stack:', error instanceof Error ? error.stack : 'no stack');
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }
