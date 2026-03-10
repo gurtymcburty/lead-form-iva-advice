@@ -33,11 +33,10 @@ export function LeadForm({ config }: LeadFormProps) {
       }
     }
 
-    // Phone validation (UK)
+    // Phone validation (UK) - just check minimum digits
     if (stepConfig.fieldType === 'tel') {
-      const phoneRegex = /^(\+44|0)[1-9][0-9]{8,10}$/;
-      const cleanPhone = value.replace(/\s/g, '');
-      if (!phoneRegex.test(cleanPhone)) {
+      const cleanPhone = value.replace(/\D/g, '');
+      if (cleanPhone.length < 10 || cleanPhone.length > 13) {
         return 'Please enter a valid UK phone number';
       }
     }
@@ -118,13 +117,24 @@ export function LeadForm({ config }: LeadFormProps) {
         throw new Error(errorData.error || 'Submission failed');
       }
 
-      // Redirect to results page
-      window.top?.location.replace('https://iva-advice.co/results/');
+      // Redirect to results page - try parent window first, fallback to current window
+      try {
+        if (window.top && window.top !== window) {
+          window.top.location.href = 'https://iva-advice.co/results/';
+        } else {
+          window.location.href = 'https://iva-advice.co/results/';
+        }
+      } catch {
+        // If blocked by same-origin policy, redirect current window
+        window.location.href = 'https://iva-advice.co/results/';
+      }
     } catch (error) {
       console.error('Submission error:', error);
+      console.error('Answers were:', JSON.stringify(finalAnswers, null, 2));
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit. Please try again.';
       setErrors((prev) => ({
         ...prev,
-        _form: error instanceof Error ? error.message : 'Failed to submit. Please try again.',
+        _form: errorMessage,
       }));
     } finally {
       setIsSubmitting(false);

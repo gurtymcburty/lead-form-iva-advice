@@ -85,9 +85,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate UK phone number format
-    const phoneRegex = /^(\+44|0)[1-9][0-9]{8,10}$/;
-    if (!phoneRegex.test(sanitizedData.phone)) {
+    // Validate UK phone number format (more lenient - just check it has enough digits)
+    const cleanPhone = sanitizedData.phone.replace(/\D/g, '');
+    if (cleanPhone.length < 10 || cleanPhone.length > 13) {
+      console.log('Phone validation failed:', sanitizedData.phone, 'clean:', cleanPhone);
       return NextResponse.json(
         { error: 'Invalid UK phone number' },
         { status: 400 }
